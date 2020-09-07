@@ -9,3 +9,6 @@
   
 4. Total_algorithm은 Version1, 2에서의 Run file임.
 
+5. Interface 구성
+
+![제목 없음](https://user-images.githubusercontent.com/56631737/92341036-72b0d000-f0f7-11ea-9ca7-f9a5568d0543.png)
