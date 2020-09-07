@@ -8,3 +8,4 @@
   - 해당 모듈은 Version1, 2에서 사용되었음 -> Matplotlib를 활용한 plot 구성을 위한 용도일뿐 -> 로직은 추후 참고용
   
 4. Total_algorithm은 Version1, 2에서의 Run file임.
+
