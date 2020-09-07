@@ -1,6 +1,6 @@
 # Code_Backup for CRONI project
 
-1. Run file : Interface_module.py를 실행
+1. Run file : Interface_module.py를 실행 [Version3 기준]
 
 2. Run file 내부 Data_module 및 Model_module과 연계되어 실행
 
