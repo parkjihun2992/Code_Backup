@@ -29,7 +29,11 @@ class Worker(QObject):
     another_shap_table = pyqtSignal(object)
 
     ##########################################
-
+    def __init__(self, loaded_pkl):
+        self.loaded_pkl = loaded_pkl        # TODO 업데이트된 내용 
+                                            # {Valname: pkl, ... } 호출  self.loaded_pkl['Valname']
+                                            # 해당 변수는 Main -> Mainwindow -> Worker 까지 연결됨.
+                
     @pyqtSlot(object)
     def generate_db(self):
         test_db = input('구현할 시나리오를 입력해주세요 : ')
@@ -41,8 +45,9 @@ class Worker(QObject):
         data_module.data_processing()  # Min-Max o, 2 Dimension
         liner = []
         plot_data = []
-        normal_data = []
-        compare_data = {'Normal':[], 'Ab21-01':[], 'Ab21-02':[], 'Ab20-04':[], 'Ab15-07':[], 'Ab15-08':[], 'Ab63-04':[], 'Ab63-02':[], 'Ab21-12':[], 'Ab19-02':[], 'Ab21-11':[], 'Ab23-03':[], 'Ab60-02':[], 'Ab59-02':[], 'Ab23-01':[], 'Ab23-06':[]}
+#        normal_data = [] Old val
+#        compare_data = {'Normal':[], 'Ab21-01':[], 'Ab21-02':[], 'Ab20-04':[], 'Ab15-07':[], 'Ab15-08':[], 'Ab63-04':[], 'Ab63-02':[], 'Ab21-12':[], 'Ab19-02':[], 'Ab21-11':[], 'Ab23-03':[], 'Ab60-02':[], 'Ab59-02':[], 'Ab23-01':[], 'Ab23-06':[]}
+        compare_data = {dict_keys: [] for dict_keys in self.loaded_pkl.keys()}  # 초기에 선언함. # TODO ...
         for line in range(np.shape(db)[0]):
             QTest.qWait(0.01)
             print(np.shape(db)[0], line)
@@ -50,40 +55,46 @@ class Worker(QObject):
             liner.append(line)
             check_data, check_parameter = data_module.load_real_check_data(row=line)
             plot_data.append(check_data[0])
-            try: normal_data.append(normal_db.iloc[line])
-            except: pass
-            try: compare_data['Normal'].append(normal_db.iloc[line])
-            except: pass
-            try: compare_data['Ab21-01'].append(ab21_01.iloc[line])
-            except: pass
-            try: compare_data['Ab21-02'].append(ab21_02.iloc[line])
-            except: pass
-            try: compare_data['Ab20-04'].append(ab20_04.iloc[line])
-            except: pass
-            try: compare_data['Ab15-07'].append(ab15_07.iloc[line])
-            except: pass
-            try: compare_data['Ab15-08'].append(ab15_08.iloc[line])
-            except: pass
-            try: compare_data['Ab63-04'].append(ab63_04.iloc[line])
-            except: pass
-            try: compare_data['Ab63-02'].append(ab63_02.iloc[line])
-            except: pass
-            try: compare_data['Ab21-12'].append(ab21_12.iloc[line])
-            except: pass
-            try: compare_data['Ab19-02'].append(ab19_02.iloc[line])
-            except: pass
-            try: compare_data['Ab21-11'].append(ab21_11.iloc[line])
-            except: pass
-            try: compare_data['Ab23-03'].append(ab23_03.iloc[line])
-            except: pass
-            try: compare_data['Ab60-02'].append(ab60_02.iloc[line])
-            except: pass
-            try: compare_data['Ab59-02'].append(ab59_02.iloc[line])
-            except: pass
-            try: compare_data['Ab23-01'].append(ab23_01.iloc[line])
-            except: pass
-            try: compare_data['Ab23-06'].append(ab23_06.iloc[line])
-            except: pass
+            # 코드 개선
+            for compare_data_key in compare_data.keys():
+                try: compare_data[compare_data_key].append(self.loaded_pkl[compare_data_key].iloc[line])
+                except: pass
+            
+#             중복 사용 normal_data는 compare_data['Normal']로 사용됨.
+#             try: normal_data.append(normal_db.iloc[line])
+#             except: pass
+#             try: compare_data['Normal'].append(normal_db.iloc[line])
+#             except: pass
+#             try: compare_data['Ab21-01'].append(ab21_01.iloc[line])
+#             except: pass
+#             try: compare_data['Ab21-02'].append(ab21_02.iloc[line])
+#             except: pass
+#             try: compare_data['Ab20-04'].append(ab20_04.iloc[line])
+#             except: pass
+#             try: compare_data['Ab15-07'].append(ab15_07.iloc[line])
+#             except: pass
+#             try: compare_data['Ab15-08'].append(ab15_08.iloc[line])
+#             except: pass
+#             try: compare_data['Ab63-04'].append(ab63_04.iloc[line])
+#             except: pass
+#             try: compare_data['Ab63-02'].append(ab63_02.iloc[line])
+#             except: pass
+#             try: compare_data['Ab21-12'].append(ab21_12.iloc[line])
+#             except: pass
+#             try: compare_data['Ab19-02'].append(ab19_02.iloc[line])
+#             except: pass
+#             try: compare_data['Ab21-11'].append(ab21_11.iloc[line])
+#             except: pass
+#             try: compare_data['Ab23-03'].append(ab23_03.iloc[line])
+#             except: pass
+#             try: compare_data['Ab60-02'].append(ab60_02.iloc[line])
+#             except: pass
+#             try: compare_data['Ab59-02'].append(ab59_02.iloc[line])
+#             except: pass
+#             try: compare_data['Ab23-01'].append(ab23_01.iloc[line])
+#             except: pass
+#             try: compare_data['Ab23-06'].append(ab23_06.iloc[line])
+#             except: pass
             if np.shape(data) == (1, 10, 46):
                 dim2 = np.array(data_module.load_scaled_data(row=line - 9))  # 2차원 scale
                 # check_data, check_parameter = data_module.load_real_check_data(row=line - 8)
@@ -100,7 +111,11 @@ class Worker(QObject):
                 self.symptom_db.emit([np.argmax(abnormal_procedure_prediction, axis=1)[0], check_parameter])
                 self.shap.emit(shap_add_des)
                 self.plot_db.emit([liner, plot_data])
-                self.display_ex.emit(shap_add_des, [liner, plot_data], normal_data)
+                
+#                 self.display_ex.emit(shap_add_des, [liner, plot_data], normal_data)
+                self.display_ex.emit(shap_add_des, [liner, plot_data], compare_data['normal_db'])
+                # compare_data['normal_db'] <---- worker_mainwindow_main에서 Want_ 변수의 내용 
+                
                 self.another_shap.emit(shap_value, [liner, plot_data], compare_data)
                 self.another_shap_table.emit(shap_value)
 
@@ -113,8 +128,14 @@ class AlignDelegate(QStyledItemDelegate):
 
 class Mainwindow(QWidget):
 
-    def __init__(self):
+    def __init__(self, loaded_pkl):
         super().__init__()
+        # PKL 파일
+        self.loaded_pkl = loaded_pkl        # TODO 업데이트된 내용 
+                                            # {Valname: pkl, ... } 호출  self.loaded_pkl['Valname']
+                                            # 해당 변수는 Main -> Mainwindow -> Worker 까지 연결됨.
+        
+        
         self.setWindowTitle("Real-Time Abnormal Diagnosis for NPP")
         self.setGeometry(150, 50, 1700, 800)
         # 그래프 초기조건
@@ -1683,39 +1704,48 @@ class another_result_explain(QWidget):
 
 
 if __name__ == "__main__":
+    # 데이터 로드 Fnc
+    def Load_pickle(file_name, Val_name):
+        with open(f'./DataBase/CNS_db/pkl/{}.pkl','rb') as f:
+             load_pkl = pickle.load(f)
+        return load_pkl, Val_name
+    # Pkl 파일 명, 변수 명
+    Want_ = [('normal', 'normal_db')] # TODO ... 아래 파일명, 변수명 튜플로 입력.
     # 데이터 로드
-    with open(f'./DataBase/CNS_db/pkl/normal.pkl', 'rb') as f:
-        normal_db = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab21-01_170.pkl', 'rb') as f:
-        ab21_01 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab21-02-152.pkl', 'rb') as f:
-        ab21_02 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab20-04_6.pkl', 'rb') as f:
-        ab20_04 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab15-07_1002.pkl', 'rb') as f:
-        ab15_07 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab15-08_1071.pkl', 'rb') as f:
-        ab15_08 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab63-04_113.pkl', 'rb') as f:
-        ab63_04 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab63-02_5(4;47트립).pkl', 'rb') as f:
-        ab63_02 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab21-12_34 (06;06트립).pkl', 'rb') as f:
-        ab21_12 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab19-02-17(05;55트립).pkl', 'rb') as f:
-        ab19_02 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab21-11_62(06;29트립).pkl', 'rb') as f:
-        ab21_11 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab23-03-77.pkl', 'rb') as f:
-        ab23_03 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab60-02_306.pkl', 'rb') as f:
-        ab60_02 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab59-02-1055.pkl', 'rb') as f:
-        ab59_02 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab23-01_30004(3;11_trip).pkl', 'rb') as f:
-        ab23_01 = pickle.load(f)
-    with open(f'./DataBase/CNS_db/pkl/ab23-06_30004(03;28 trip).pkl', 'rb') as f:
-        ab23_06 = pickle.load(f)
+    Loaded_DB = {Val_name: Loaded_pkl for Val_name, Loaded_pkl in Want_}                                                               
+
+#     with open(f'./DataBase/CNS_db/pkl/normal.pkl', 'rb') as f:
+#         normal_db = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab21-01_170.pkl', 'rb') as f:
+#         ab21_01 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab21-02-152.pkl', 'rb') as f:
+#         ab21_02 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab20-04_6.pkl', 'rb') as f:
+#         ab20_04 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab15-07_1002.pkl', 'rb') as f:
+#         ab15_07 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab15-08_1071.pkl', 'rb') as f:
+#         ab15_08 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab63-04_113.pkl', 'rb') as f:
+#         ab63_04 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab63-02_5(4;47트립).pkl', 'rb') as f:
+#         ab63_02 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab21-12_34 (06;06트립).pkl', 'rb') as f:
+#         ab21_12 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab19-02-17(05;55트립).pkl', 'rb') as f:
+#         ab19_02 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab21-11_62(06;29트립).pkl', 'rb') as f:
+#         ab21_11 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab23-03-77.pkl', 'rb') as f:
+#         ab23_03 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab60-02_306.pkl', 'rb') as f:
+#         ab60_02 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab59-02-1055.pkl', 'rb') as f:
+#         ab59_02 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab23-01_30004(3;11_trip).pkl', 'rb') as f:
+#         ab23_01 = pickle.load(f)
+#     with open(f'./DataBase/CNS_db/pkl/ab23-06_30004(03;28 trip).pkl', 'rb') as f:
+#         ab23_06 = pickle.load(f)
     print('데이터 불러오기를 완료하여 모델 불러오기로 이행합니다.')
     # 모델 로드
     model_module = Model_module()
